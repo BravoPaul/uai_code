@@ -345,3 +345,17 @@ result = model.predict(test)
 pd.DataFrame(result).to_csv("result_ture2.csv")
 # trainning_test()
 
+
+# 思路
+
+# 分类预测。把所有有记录的[start_geo_id,end_geo_id,create_hour] 找出来。而且这个记录数必须大于某个值。
+# 对于小于这个值得[start_geo_id,end_geo_id,create_hour]，找这样 [start_geo_id，end_geo_id] 能够匹配到的
+# 对于找不到[start_geo_id，end_geo_id]这样的。找[start_geo_id ,create_hour] 这样的和[end_geo_id,create_hour]
+# 实在找不到只找[start_geo_id]这样的和[end_geo_id]这样的
+# 啥都找不到进行瞎预测的
+
+
+# 猜测测试集中的数据都是订单量比较大的，例如都是5个，6个，甚至更多的订单，这样的订单，所以在训练的时候，如果把1个订单和2个订单都加上，也许因为测试集和训练集的订单数分布很不一样，训练效果不好
+
+
+
