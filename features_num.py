@@ -190,16 +190,20 @@ def features_num(yongtu='xunlian'):
 # 训练节测试集构造
 def trainning_test():
     features_train = features_num()
+    index_get = features_train['day_count'+'2017-07-01']>0
+    features_train = features_train[index_get] 
+    print features_train
 
     del features_train['start_geo_id']
     del features_train['end_geo_id']
     del features_train['create_date']
     del features_train['create_hour']
     label = july_order_test_with_label['num']
+    label = label[index_get]
 
     dtrain, dtest, dtrain_y, dtest_y = train_test_split(features_train, label, test_size=0.2, random_state=42)
 
-    xgb_model = xgb.XGBRegressor(max_depth=5, learning_rate=0.05, n_estimators=200).fit(dtrain, dtrain_y)
+    xgb_model = xgb.XGBRegressor(max_depth=10, learning_rate=0.05, n_estimators=500).fit(dtrain, dtrain_y)
     predictions = xgb_model.predict(dtest)
     actuals = dtest_y
     s_prediciotn = pd.Series(predictions)
@@ -209,6 +213,7 @@ def trainning_test():
     result['label'] = s_label
     result.to_csv("result.csv")
     print(mean_absolute_error(actuals, predictions))
+    return xgb_model
 
 
 # 训练节测试集构造
@@ -240,7 +245,7 @@ def testing():
     del features_test['create_hour']
     return features_test.values
 
-model = trainning()
+model = trainning_test()
 pyplot.bar(range(len(model.feature_importances_)), model.feature_importances_)
 # test = testing()
 # result = model.predict(test)
