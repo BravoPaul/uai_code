@@ -153,7 +153,6 @@ def f1_num_between_day(time1,time2,yongtu='xunlian'):
 
 
 
-
 def features_num(yongtu='xunlian'):
     if yongtu=='xunlian':
         f1_num_24 = f1_num('2017-07-01', '2017-07-24',yongtu)
@@ -176,6 +175,7 @@ def features_num(yongtu='xunlian'):
         between_day = f1_num_between_day('2017-07-31', '2017-08-07',yongtu)
         between_hour = f1_num_between_hour('2017-07-31', '2017-08-07',yongtu)
 
+    weather = pd.read_csv("data/weatherTreated.csv")
     features = pd.merge(f1_num_24,f1_num_7,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
     features = pd.merge(features,f1_num_3,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
     features = pd.merge(features,f1_num_1,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
@@ -184,13 +184,14 @@ def features_num(yongtu='xunlian'):
     features = pd.merge(features,f1_num_week_7,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
     features = pd.merge(features,between_day,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
     features = pd.merge(features,between_hour,on=['start_geo_id','end_geo_id','create_date','create_hour'],how='left')
+    features = pd.merge(features,weather,on=['create_date','create_hour'],how='left')    
     return features
 
 
 # 训练节测试集构造
 def trainning_test():
     features_train = features_num()
-    index_get = features_train['day_count'+'2017-07-01']>0
+    index_get = features_train['day_count'+'2017-07-01']>15
     features_train = features_train[index_get] 
     print features_train
 
@@ -203,12 +204,13 @@ def trainning_test():
 
     dtrain, dtest, dtrain_y, dtest_y = train_test_split(features_train, label, test_size=0.2, random_state=42)
 
-    xgb_model = xgb.XGBRegressor(max_depth=10, learning_rate=0.05, n_estimators=500).fit(dtrain, dtrain_y)
+    xgb_model = xgb.XGBRegressor(max_depth=5, learning_rate=0.05, n_estimators=500).fit(dtrain, dtrain_y)
     predictions = xgb_model.predict(dtest)
     actuals = dtest_y
     s_prediciotn = pd.Series(predictions)
     s_label = pd.Series(actuals).reset_index()
     del s_label['index']
+
     result = s_prediciotn.to_frame()
     result['label'] = s_label
     result.to_csv("result.csv")
@@ -219,7 +221,7 @@ def trainning_test():
 # 训练节测试集构造
 def trainning():
     features_train = features_num()
-    features_train = features_train[features_train['day_count'+'2017-07-24']>0] 
+    # features_train = features_train[features_train['day_count'+'2017-07-24']>0] 
 
     del features_train['start_geo_id']
     del features_train['end_geo_id']
@@ -231,7 +233,7 @@ def trainning():
 
     dtrain, dtest, dtrain_y, dtest_y = train_test_split(features_train, label, test_size=0.0, random_state=42)
 
-    xgb_model = xgb.XGBRegressor(max_depth=5, learning_rate=0.05, n_estimators=200).fit(dtrain, dtrain_y)
+    xgb_model = xgb.XGBRegressor(max_depth=5, learning_rate=0.05, n_estimators=300).fit(dtrain, dtrain_y)
     return xgb_model
 
 
@@ -245,11 +247,13 @@ def testing():
     del features_test['create_hour']
     return features_test.values
 
-model = trainning_test()
-pyplot.bar(range(len(model.feature_importances_)), model.feature_importances_)
-# test = testing()
-# result = model.predict(test)
-# pd.DataFrame(result).to_csv("result_ture2.csv")
+model = trainning()
+# print model.feature_importances_
+# pyplot.bar(range(len(model.feature_importances_)), model.feature_importances_)
+
+test = testing()
+result = model.predict(test)
+pd.DataFrame(result).to_csv("result_ture2.csv")
 
 
 
